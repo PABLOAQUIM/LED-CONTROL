@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>control de un led, Ing. Pablo Aquim</title>
+<style>
+  body{font-family:Arial, sans-serif; text-align:center; padding:28px; background:#f7f7f7}
+  h1{color:#333}
+  .row{margin:16px 0}
+  button{
+    font-size:2rem; padding:20px 34px; margin:10px;
+    border:none; border-radius:12px; color:#fff; cursor:pointer
+  }
+  .on{background:#28a745} .off{background:#dc3545}
+  .info{
+    display:inline-block; text-decoration:none; color:#fff; background:#007bff;
+    padding:14px 18px; border-radius:10px; font-size:1.1rem
+  }
+  #status{margin-top:20px; font-size:1.2rem; color:#111}
+  code{background:#eee; padding:2px 6px; border-radius:6px}
+</style>
+</head>
+<body>
+  <h1>control de un led, Ing. Pablo Aquim</h1>
+
+  <div class="row">
+    <!-- ON -->
+    <form id="formOn"
+      action="https://io.adafruit.com/api/v2/PABLOAQUIM/groups/default/feeds/led/data?X-AIO-Key=aio_XzHb42q3ZBDbZtnIpVi1zBI281Kk"
+      method="POST" target="hidden_iframe" enctype="application/x-www-form-urlencoded" accept-charset="utf-8">
+      <input type="hidden" name="value" value="ON" />
+      <button class="on" type="submit">ON</button>
+    </form>
+
+    <!-- OFF -->
+    <form id="formOff"
+      action="https://io.adafruit.com/api/v2/PABLOAQUIM/groups/default/feeds/led/data?X-AIO-Key=aio_XzHb42q3ZBDbZtnIpVi1zBI281Kk"
+      method="POST" target="hidden_iframe" enctype="application/x-www-form-urlencoded" accept-charset="utf-8">
+      <input type="hidden" name="value" value="OFF" />
+      <button class="off" type="submit">OFF</button>
+    </form>
+  </div>
+
+  <!-- Leer último valor: usar ruta de FEEDS (sin grupo) -->
+  <div class="row">
+    <a class="info"
+       href="https://io.adafruit.com/api/v2/PABLOAQUIM/feeds/led/data/last?X-AIO-Key=aio_XzHb42q3ZBDbZtnIpVi1zBI281Kk"
+       target="_blank" rel="noopener">
+      Leer último valor
+    </a>
+  </div>
+
+  <div id="status">Listo.</div>
+
+  <!-- iframe oculto para procesar los POST y poder mostrar el estado en la misma página -->
+  <iframe name="hidden_iframe" style="width:0;height:0;border:0;visibility:hidden"></iframe>
+
+<script>
+  document.getElementById('formOn').addEventListener('submit', ()=> {
+    document.getElementById('status').textContent = "Enviado: ON";
+  });
+  document.getElementById('formOff').addEventListener('submit', ()=> {
+    document.getElementById('status').textContent = "Enviado: OFF";
+  });
+</script>
+</body>
+</html>
