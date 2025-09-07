@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Control LED – Ing.Pablo Aquim</title>
+<style>
+body{font-family:Arial, sans-serif; text-align:center; padding:40px; background:#f7f7f7}
+h1{color:#333}
+button{font-size:2rem; padding:20px 40px; margin:20px; border:none; border-radius:12px; color:#fff; cursor:pointer}
+.on{background:#28a745} .off{background:#dc3545}
+#status{margin-top:18px; font-size:1.1rem}
+</style>
+</head>
+<body>
+<h1>Control LED – Ing.Pablo Aquim</h1>
+<button class="on" onclick="sendValue('ON')">ON</button>
+<button class="off" onclick="sendValue('OFF')">OFF</button>
+<div id="status">Listo.</div>
+<script>
+// ===== COMPLETÁ SOLO ESTO =====
+const USERNAME = "PABLOAQUIM"; // ej: "pabloaquim"
+const AIO_KEY = "aio_hSBn15FN5nbx1WSBKjOSAmt2dQCO"; // tu Active Key
+const FEED_KEY = "led"; // feed key (slug). Suele ser en minúsculas
+const USE_GROUP = false; // true si el feed está en un grupo
+const GROUP_KEY = "casa"; // si USE_GROUP=true, grupo (slug), p.ej "casa"
+// =================================
+function dataUrl(){
+if(USE_GROUP){
+return `https://io.adafruit.com/api/v2/${USERNAME}/groups/${encodeURIComponent(GROUP_KEY)}/feeds/${encodeURIComponent(FEED_KEY)}/data`;
+}else{
+return `https://io.adafruit.com/api/v2/${USERNAME}/feeds/${encodeURIComponent(FEED_KEY)}/data`;
+}
+}
+async function sendValue(val){
+try{
+const res = await fetch(dataUrl(), {
+method: 'POST',
+headers: { 'Content-Type':'application/json', 'X-AIO-Key': AIO_KEY },
+body: JSON.stringify({ value: val })
+});
+const txt = await res.text();
+if(!res.ok) throw new Error(`HTTP ${res.status}`);
+setStatus(`Enviado: ${val}`);
+}catch(e){
+setStatus(`Error: ${e.message}`, true);
+}
+}
+function setStatus(msg, err=false){
+const el = document.getElementById('status');
+el.textContent = msg;
+el.style.color = err ? '#b00020' : '#111';
+}
+</script>
+</body>
+</html>
