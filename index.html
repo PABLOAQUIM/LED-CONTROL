@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>control de un led, Ing. Pablo Aquim</title>
+<style>
+  body{font-family:Arial, sans-serif; text-align:center; padding:24px; background:#f7f7f7}
+  h1{color:#333; margin:12px 0 6px}
+  .cfg, .row{margin:14px 0}
+  label{display:block; margin:8px auto; max-width:560px; text-align:left; color:#444}
+  input[type=text], input[type=password]{width:100%; padding:10px 12px; font-size:1rem; border:1px solid #ccc; border-radius:10px}
+  .btn{font-size:1rem; padding:10px 16px; border:none; border-radius:10px; cursor:pointer; margin:6px}
+  .save{background:#0069d9; color:#fff}
+  .onoff{font-size:2rem; padding:18px 28px; color:#fff; border:none; border-radius:12px; cursor:pointer; margin:10px}
+  .on{background:#28a745} .off{background:#dc3545}
+  .info{display:inline-block; text-decoration:none; color:#fff; background:#007bff; padding:12px 16px; border-radius:10px; font-size:1rem}
+  #status{margin-top:10px; font-size:1.1rem; color:#111}
+  .inline{display:inline-flex; align-items:center; gap:.5rem}
+  form{display:inline-block}
+</style>
+</head>
+<body>
+  <h1>control de un led, Ing. Pablo Aquim</h1>
+
+  <!-- Config local (NO se sube la clave al repo) -->
+  <div class="cfg">
+    <label>USERNAME (fijo)
+      <input type="text" id="username" value="PABLOAQUIM" readonly />
+    </label>
+    <label>FEED KEY (fijo)
+      <input type="text" id="feed" value="led" readonly />
+    </label>
+    <label>AIO KEY (se guarda solo en este navegador)
+      <input type="password" id="aiokey" placeholder="pegá aquí tu AIO Key (ej: aio_xxx...)" />
+    </label>
+    <div class="inline">
+      <input type="checkbox" id="stayHere" />
+      <span>Mantenerme en esta página (no abrir pestaña nueva)</span>
+    </div>
+    <div>
+      <button class="btn save" id="saveCfg">Guardar clave y activar controles</button>
+    </div>
+  </div>
+
+  <!-- Botones principales: POST nativo -->
+  <div class="row">
+    <form id="formOn"  method="POST" target="_blank"  enctype="application/x-www-form-urlencoded" accept-charset="utf-8">
+      <input type="hidden" name="value" value="ON" />
+      <button class="onoff on" type="submit" disabled>ON</button>
+    </form>
+    <form id="formOff" method="POST" target="_blank"  enctype="application/x-www-form-urlencoded" accept-charset="utf-8">
+      <input type="hidden" name="value" value="OFF" />
+      <button class="onoff off" type="submit" disabled>OFF</button>
+    </form>
+  </div>
+
+  <!-- Leer último valor (se arma dinámicamente) -->
+  <div class="row">
+    <a class="info" id="readLast" href="#" target="_blank" rel="noopener" aria-disabled="true">Leer último valor</a>
+  </div>
+
+  <div id="status">Pegá tu AIO Key y presioná “Guardar clave y activar controles”.</div>
+
+  <!-- iframe oculto para “quedarme en esta página” -->
+  <iframe name="hidden_iframe" style="width:0;height:0;border:0;visibility:hidden"></iframe>
+
+<script>
+  const $ = id => document.getElementById(id);
+  const username = $("username").value.trim();
+  const feedKey  = $("feed").value.trim();
+  const aiokeyEl = $("aiokey");
+  const formOn   = $("formOn");
+  const formOff  = $("formOff");
+  const readLast = $("readLast");
+  const stay     = $("stayHere");
+  const statusEl = $("status");
+  const saveBtn  = $("saveCfg");
+
+  // Cargar AIO Key de localStorage si existe
+  (function initFromStorage(){
+    const saved = localStorage.getItem("aio_key");
+    if(saved){
+      aiokeyEl.value = saved;
+      buildActions(saved);
+      setEnabled(true);
+      status("Clave cargada desde este navegador.");
+    }
+  })();
+
+  // Guardar y activar
+  saveBtn.addEventListener("click", function(){
+    const key = aiokeyEl.value.trim();
+    if(!key){ status("Pegá tu AIO Key primero.", true); return; }
+    localStorage.setItem("aio_key", key);
+    buildActions(key);
+    setEnabled(true);
+    status("Controles activados. Clave guardada solo en este dispositivo.");
+  });
+
+  // Cambiar destino (nueva pestaña vs. iframe oculto)
+  function updateTargets(){
+    const tgt = stay.checked ? "hidden_iframe" : "_blank";
+    formOn.target  = tgt;
+    formOff.target = tgt;
+  }
+  stay.addEventListener("change", updateTargets);
+  updateTargets();
+
+  // Construye las URLs de acción sin exponer la clave en el archivo
+  function buildActions(aioKey){
+    const postUrl = `https://io.adafruit.com/api/v2/${encodeURIComponent(username)}/feeds/${encodeURIComponent(feedKey)}/data?X-AIO-Key=${encodeURIComponent(aioKey)}`;
+    formOn.action  = postUrl;
+    formOff.action = postUrl;
+    readLast.href  = `https://io.adafruit.com/api/v2/${encodeURIComponent(username)}/feeds/${encodeURIComponent(feedKey)}/data/last?X-AIO-Key=${encodeURIComponent(aioKey)}`;
+    readLast.setAttribute("aria-disabled","false");
+  }
+
+  // Habilita/Deshabilita botones
+  function setEnabled(ok){
+    formOn.querySelector("button").disabled  = !ok;
+    formOff.querySelector("button").disabled = !ok;
+    readLast.style.pointerEvents = ok ? "auto" : "none";
+    readLast.style.opacity = ok ? "1" : ".6";
+  }
+
+  // Mensajes locales
+  formOn.addEventListener("submit",  ()=> status("Enviado: ON"));
+  formOff.addEventListener("submit", ()=> status("Enviado: OFF"));
+  function status(msg, err=false){
+    statusEl.textContent = msg;
+    statusEl.style.color = err ? "#b00020" : "#111";
+  }
+</script>
+</body>
+</html>
